@@ -1,10 +1,10 @@
 package com.yi.streaming.leftjoin;
 
-import com.yi.streaming.intervaljoin.datasource.ExchangeRateDataSource;
-import com.yi.streaming.intervaljoin.datasource.OrderDataSource;
-import com.yi.streaming.intervaljoin.pojo.CurrencyType;
-import com.yi.streaming.intervaljoin.pojo.ExchangeRateInfo;
-import com.yi.streaming.intervaljoin.pojo.OrderInfo;
+import com.yi.streaming.leftjoin.datasource.ExchangeRateDataSource;
+import com.yi.streaming.leftjoin.datasource.OrderDataSource;
+import com.yi.streaming.leftjoin.pojo.CurrencyType;
+import com.yi.streaming.leftjoin.pojo.ExchangeRateInfo;
+import com.yi.streaming.leftjoin.pojo.OrderInfo;
 import org.apache.flink.api.common.functions.CoGroupFunction;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * 可以看出join 实际是  coGroup的一种特殊情况
  * @date: create in 2020-9-11 15:24:55
  */
-public class StreamingJoin {
+public class StreamingLeftJoin {
 
     public static void main(String[] args) throws Exception {
 

@@ -27,7 +27,7 @@ import java.util.Map;
  * 每秒产生一条汇率，每10秒产生一条订单数据，实时转换订单汇率
  * @date: create in 2020-9-11 15:24:55
  */
-public class StreamingJoin {
+public class StreamingIntervalJoin {
 
     public static void main(String[] args) throws Exception {
 
