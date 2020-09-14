@@ -35,6 +35,7 @@ under the License.
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<log4j.version>2.13.3</log4j.version>
+		<hutool-all.version>5.4.2</hutool-all.version>
 	</properties>
 
 	<repositories>
@@ -71,6 +72,13 @@ under the License.
 			<artifactId>flink-clients_${scala.binary.version}</artifactId>
 			<version>${flink.version}</version>
 			<!--<scope>provided</scope>-->
+		</dependency>
+
+		<!--第三方开源工具类-->
+		<dependency>
+			<groupId>cn.hutool</groupId>
+			<artifactId>hutool-all</artifactId>
+			<version>${hutool-all.version}</version>
 		</dependency>
 
 		<!-- Add connector dependencies here. They must be in the default scope (compile). -->
