@@ -1,6 +1,6 @@
 package com.yi.streaming;
 
-import org.apache.flink.api.common.functions.FoldFunction;
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -43,20 +43,39 @@ public class StreamingCountWindow {
             }
         }, "orderInfo");
 
-        orderSource
-                // 每10秒统计一次最近1分钟内的订单数量
-                .countWindowAll(10)
-                // 使用HashMap作为累加器
-                .fold(new HashMap<>(), new FoldFunction<Tuple2<String, Integer>, HashMap<String, Integer>>() {
-                    @Override
-                    public HashMap<String, Integer> fold(HashMap<String, Integer> accumulator, Tuple2<String, Integer> value) throws Exception {
-                        accumulator.put(value.f0, accumulator.getOrDefault(value.f0, 0) + value.f1);
-                        return accumulator;
-                    }
-                })
-                // 把数据打印到控制台
-                .print();
+
+        // 每10个订单数量统计一次
+        orderSource.countWindowAll(10).aggregate(new CountAggregateFunction()).print();
 
         env.execute("Flink Streaming Java API Skeleton Hello");
+    }
+
+    /**
+     * 累加统计逻辑
+     */
+    public static class CountAggregateFunction implements AggregateFunction<Tuple2<String, Integer>, HashMap<String, Integer>, HashMap<String, Integer>> {
+
+        @Override
+        public HashMap<String, Integer> createAccumulator() {
+            return new HashMap<>();
+        }
+
+        @Override
+        public HashMap<String, Integer> add(Tuple2<String, Integer> value, HashMap<String, Integer> accMap) {
+            // 数据累加计算
+            int count = accMap.get(value.f0) == null ? 0 : accMap.get(value.f0);
+            accMap.put(value.f0, count + value.f1);
+            return accMap;
+        }
+
+        @Override
+        public HashMap<String, Integer> getResult(HashMap<String, Integer> accMap) {
+            return accMap;
+        }
+
+        @Override
+        public HashMap<String, Integer> merge(HashMap<String, Integer> acc1, HashMap<String, Integer> acc2) {
+            return null;
+        }
     }
 }
