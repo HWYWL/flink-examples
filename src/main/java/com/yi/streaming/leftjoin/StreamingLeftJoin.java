@@ -5,21 +5,20 @@ import com.yi.streaming.leftjoin.datasource.OrderDataSource;
 import com.yi.streaming.leftjoin.pojo.CurrencyType;
 import com.yi.streaming.leftjoin.pojo.ExchangeRateInfo;
 import com.yi.streaming.leftjoin.pojo.OrderInfo;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.CoGroupFunction;
 import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * coGroup - 类似于left join
@@ -36,34 +35,19 @@ public class StreamingLeftJoin {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // 设置每个事件时间独立,时间由自己指定
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        // env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         // CNY -> USD 汇率流
         SingleOutputStreamOperator<ExchangeRateInfo> cnyToUsd = env.addSource(new ExchangeRateDataSource(CurrencyType.CNY, CurrencyType.USD, 7, 6), "CNY-USD")
-                .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ExchangeRateInfo>(Time.milliseconds(100)) {
-                    @Override
-                    public long extractTimestamp(ExchangeRateInfo element) {
-                        return element.getTimeStamp().getTime();
-                    }
-                });
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(100)));
 
         // CNY -> USD 汇率流
         SingleOutputStreamOperator<ExchangeRateInfo> cnyToEur = env.addSource(new ExchangeRateDataSource(CurrencyType.CNY, CurrencyType.EUR, 8, 7), "CNY-USD")
-                .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ExchangeRateInfo>(Time.milliseconds(100)) {
-                    @Override
-                    public long extractTimestamp(ExchangeRateInfo element) {
-                        return element.getTimeStamp().getTime();
-                    }
-                });
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(100)));
 
         // 订单流
         SingleOutputStreamOperator<OrderInfo> orderDs = env.addSource(new OrderDataSource())
-                .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<OrderInfo>(Time.milliseconds(100)) {
-                    @Override
-                    public long extractTimestamp(OrderInfo element) {
-                        return element.getTimeStamp().getTime();
-                    }
-                });
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(100)));
 
         DataStream<ExchangeRateInfo> union = cnyToUsd.union(cnyToEur);
 
@@ -73,7 +57,7 @@ public class StreamingLeftJoin {
                 .where((KeySelector<OrderInfo, Object>) value -> value.getCurrencyType())
                 .equalTo((KeySelector<ExchangeRateInfo, Object>) value -> value.getFrom())
                 // 10秒窗口期
-                .window(TumblingEventTimeWindows.of(Time.seconds(10)))
+                .window(TumblingProcessingTimeWindows.of(Time.seconds(10)))
 
                 // 数据处理
                 .apply(new CoGroupFunction<OrderInfo, ExchangeRateInfo, Object>() {

@@ -5,12 +5,12 @@ import com.yi.streaming.connect.datasource.OrderDataSource;
 import com.yi.streaming.connect.pojo.CurrencyType;
 import com.yi.streaming.connect.pojo.ExchangeRateInfo;
 import com.yi.streaming.connect.pojo.OrderInfo;
-import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.CoMapFunction;
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
-import org.apache.flink.streaming.api.windowing.time.Time;
+
+import java.time.Duration;
 
 /**
  * @author: YI
@@ -24,25 +24,15 @@ public class StreamingConnect {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // 设置每个事件时间独立,时间由自己指定
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        // env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         // CNY -> USD 汇率流
         SingleOutputStreamOperator<ExchangeRateInfo> cnyToUsd = env.addSource(new ExchangeRateDataSource(CurrencyType.CNY, CurrencyType.USD, 7, 6), "CNY-USD")
-                .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ExchangeRateInfo>(Time.milliseconds(100)) {
-                    @Override
-                    public long extractTimestamp(ExchangeRateInfo element) {
-                        return element.getTimeStamp().getTime();
-                    }
-                });
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(100)));
 
         // 订单流
         SingleOutputStreamOperator<OrderInfo> orderDs = env.addSource(new OrderDataSource())
-                .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<OrderInfo>(Time.milliseconds(100)) {
-                    @Override
-                    public long extractTimestamp(OrderInfo element) {
-                        return element.getTimeStamp().getTime();
-                    }
-                });
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(100)));
 
         cnyToUsd.connect(orderDs)
                 .map(new CoMapFunction<ExchangeRateInfo, OrderInfo, Object>() {

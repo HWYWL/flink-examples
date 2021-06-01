@@ -5,19 +5,17 @@ import com.yi.streaming.intervaljoin.datasource.OrderDataSource;
 import com.yi.streaming.intervaljoin.pojo.CurrencyType;
 import com.yi.streaming.intervaljoin.pojo.ExchangeRateInfo;
 import com.yi.streaming.intervaljoin.pojo.OrderInfo;
-import org.apache.flink.api.common.functions.JoinFunction;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.java.functions.KeySelector;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
-import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,29 +32,20 @@ public class StreamingIntervalJoin {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // 设置每个事件时间独立,时间由自己指定
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        // env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         // CNY -> USD 汇率流
         SingleOutputStreamOperator<ExchangeRateInfo> cnyToUsd = env.addSource(new ExchangeRateDataSource(CurrencyType.CNY, CurrencyType.USD, 7, 6), "CNY-USD")
-                .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<ExchangeRateInfo>(Time.milliseconds(100)) {
-                    @Override
-                    public long extractTimestamp(ExchangeRateInfo element) {
-                        return element.getTimeStamp().getTime();
-                    }
-                });
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(100)));
 
         // 订单流
         SingleOutputStreamOperator<OrderInfo> orderDs = env.addSource(new OrderDataSource())
-                .assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<OrderInfo>(Time.milliseconds(100)) {
-                    @Override
-                    public long extractTimestamp(OrderInfo element) {
-                        return element.getTimeStamp().getTime();
-                    }
-                });
+                .assignTimestampsAndWatermarks(WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofMillis(100)));
 
         KeyedStream<ExchangeRateInfo, Object> cnyToUsdKeyedStream = cnyToUsd.keyBy((KeySelector<ExchangeRateInfo, Object>) value -> value.getFrom());
         KeyedStream<OrderInfo, Object> orderDsKeyedStream = orderDs.keyBy((KeySelector<OrderInfo, Object>) value -> value.getCurrencyType());
 
+        // todo 此方法还有问题
         // 订单流 interval Join 汇率流
         cnyToUsdKeyedStream.intervalJoin(orderDsKeyedStream)
                 .between(Time.milliseconds(-500), Time.milliseconds(500))
