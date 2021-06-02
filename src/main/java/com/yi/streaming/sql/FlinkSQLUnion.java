@@ -15,7 +15,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
  * @description: 使用SQL，像查表一样查询数据
  * @date: create in 2021-6-2 18:32:11
  */
-public class FlinkSQL {
+public class FlinkSQLUnion {
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -23,16 +23,21 @@ public class FlinkSQL {
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env, settings);
 
         // 订单流
-        DataStreamSource<OrderInfo> streamSource = env.addSource(new OrderDataSource());
-        // 查询方式一，将DataStream转为视图
-        tableEnv.createTemporaryView("order_info", streamSource);
-        Table table = tableEnv.sqlQuery("select * from order_info where totalAmt>=20");
-        DataStream<OrderInfo> orderInfoDataStream = tableEnv.toAppendStream(table, OrderInfo.class);
-        orderInfoDataStream.print();
+        DataStreamSource<OrderInfo> orderDs1 = env.addSource(new OrderDataSource());
+        DataStreamSource<OrderInfo> orderDs2 = env.addSource(new OrderDataSource());
 
-        // 查询方式二，将DataStream转为table
-        Table scTable = tableEnv.fromDataStream(streamSource);
-        Table resultTable = tableEnv.sqlQuery("select * from " + scTable + " where totalAmt>=20");
+        // 将DataStream转为视图
+        tableEnv.createTemporaryView("order_info", orderDs1);
+
+        // 将DataStream转为table
+        Table scTable = tableEnv.fromDataStream(orderDs2);
+
+        String sql = "SELECT * FROM " + scTable + " WHERE totalAmt >= 20 UNION ALL SELECT * FROM order_info WHERE  totalAmt >= 25";
+
+        // union 视图与表
+        Table resultTable = tableEnv.sqlQuery(sql);
+
+        // 打印结果
         DataStream<OrderInfo> result = tableEnv.toAppendStream(resultTable, TypeInformation.of(OrderInfo.class));
         result.print();
 
