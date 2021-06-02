@@ -74,6 +74,23 @@ under the License.
 			<!--<scope>provided</scope>-->
 		</dependency>
 
+		<!--Flink SQL需要使用的包，如果不需要可以不引入-->
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-table-api-java-bridge_${scala.binary.version}</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-table-planner-blink_${scala.binary.version}</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-table-common</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
+
 		<!--第三方开源工具类-->
 		<dependency>
 			<groupId>cn.hutool</groupId>
