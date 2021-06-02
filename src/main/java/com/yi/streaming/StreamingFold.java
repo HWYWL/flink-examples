@@ -1,13 +1,15 @@
 package com.yi.streaming;
 
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -45,12 +47,16 @@ public class StreamingFold {
         }, "orderInfo");
 
 
-                // 按照第一个字段区分商品(商品名称)
-        KeyedStream<Tuple2<String, Integer>, Object> keyedStream = orderSource.keyBy((KeySelector<Tuple2<String, Integer>, Object>) value -> "");
-
-        // todo 此处逻辑没有实现
-        DataStream<Tuple2<String, Integer>> sum = keyedStream.sum(1);
-        sum.print();
+        // 按照商品名称进行统计
+        KeyedStream<Tuple2<String, Integer>, String> keyedStream = orderSource.keyBy((KeySelector<Tuple2<String, Integer>, String>) value -> value.f0);
+        // 汇总求和统计
+        keyedStream.sum(1).print();
+        // 转为Map输出
+//        keyedStream.sum(1).map((MapFunction<Tuple2<String, Integer>, Map<String, Integer>>) value -> {
+//            Map<String, Integer> map = new HashMap<>();
+//            map.put(value.f0, value.f1);
+//            return map;
+//        }).print();
 
         env.execute("Flink Streaming Java API Skeleton Hello");
     }
