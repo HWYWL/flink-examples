@@ -74,6 +74,13 @@ under the License.
 			<!--<scope>provided</scope>-->
 		</dependency>
 
+		<!--使用kinesis作为数据源，如果不需要可以不引入-->
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-kinesis_2.11</artifactId>
+			<version>${flink.version}</version>
+		</dependency>
+
 		<!--Flink SQL需要使用的包，如果不需要可以不引入-->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
