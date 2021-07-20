@@ -13,3 +13,9 @@ taskmanager.numberOfTaskSlots: 8
 ```shell
 ./home/hadoop/flink-1.12.4/bin/flink run -c com.yi.streaming.state.FlinkStateMapState /home/hadoop/app/flink-examples-1.0-SNAPSHOT.jar 
 ```
+
+### git版本分支
+```
+matser: 对应Flink 1.12.x之前版本的代码
+1.12.x: 对应Flink 1.12.x版本的代码
+```
