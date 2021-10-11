@@ -59,6 +59,7 @@ public class OrderDataSource implements SourceFunction<OrderInfo> {
             int num = random.nextInt(20);
             goodsList.add(new Goods(goodsTypes[random.nextInt(goodsTypes.length)], unitPrice, CurrencyType.CNY, num));
             totalAmt = totalAmt.add(unitPrice.multiply(BigDecimal.valueOf(num)));
+            orderInfo.setOrderCount(num);
         }
 
         orderInfo.setGoods(goodsList);

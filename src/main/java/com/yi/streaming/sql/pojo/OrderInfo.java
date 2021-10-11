@@ -13,6 +13,7 @@ public class OrderInfo {
     private String orderId;
     private Date timeStamp;
     private BigDecimal totalAmt;
+    private Integer orderCount;
     private List<Goods> goods;
     private CurrencyType currencyType;
 
@@ -54,6 +55,14 @@ public class OrderInfo {
 
     public void setCurrencyType(CurrencyType currencyType) {
         this.currencyType = currencyType;
+    }
+
+    public Integer getOrderCount() {
+        return orderCount;
+    }
+
+    public void setOrderCount(Integer orderCount) {
+        this.orderCount = orderCount;
     }
 
     @Override
