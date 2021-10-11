@@ -5,6 +5,7 @@ import com.yi.streaming.union.pojo.ExchangeRateInfo;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +35,7 @@ public class ExchangeRateDataSource implements SourceFunction<ExchangeRateInfo> 
         while (isRunning) {
             TimeUnit.SECONDS.sleep(10);
 
-            BigDecimal bigDecimal = new BigDecimal(min + ((max - min) * new Random().nextFloat())).setScale(2, BigDecimal.ROUND_HALF_UP);
+            BigDecimal bigDecimal = new BigDecimal(min + ((max - min) * new Random().nextFloat())).setScale(2, RoundingMode.HALF_UP);
             ExchangeRateInfo exchangeRateInfo = new ExchangeRateInfo(from, to, bigDecimal);
 
             ctx.collectWithTimestamp(exchangeRateInfo, System.currentTimeMillis());
