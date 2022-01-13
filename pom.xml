@@ -144,6 +144,11 @@ under the License.
 			<version>1.18.20</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.yi</groupId>
+			<artifactId>flink-examples</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<build>
